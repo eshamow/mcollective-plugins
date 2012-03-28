@@ -9,6 +9,9 @@ The ACTION can be one of the following:
               CONCURRENCY nodes at a time
     runonce - invoke a puppet run on matching nodes, limiting load with
               puppet agent's --splay option
+    runonce_synchronous - 
+              invoke a puppet run on matching nodes and wait for all runs to 
+              complete
     disable - create a lockfile that prevents puppet agent from running
     enable  - remove any lockfile preventing puppet agent from running
     status  - report whether puppet agent is enabled, whether it is currently
@@ -27,8 +30,8 @@ The ACTION can be one of the following:
       configuration[:command] = ARGV.shift
       configuration[:concurrency] = ARGV.shift.to_i or 0
 
-      unless configuration[:command].match(/^(enable|disable|runonce|runall|status|summary|count)$/)
-        raise "Action must be enable, disable, runonce, runonce, runall, status, summary, or count"
+      unless configuration[:command].match(/^(enable|disable|runonce|runonce_synchronous|runall|status|summary|count)$/)
+        raise "Action must be enable, disable, runonce, runonce_synchronous, runall, status, summary, or count"
       end
     else
       raise "Please specify an action."
@@ -101,6 +104,18 @@ The ACTION can be one of the following:
 
     when "runonce"
       printrpc mc.runonce(:forcerun => configuration[:force])
+
+    when "runonce_synchronous"
+      successful = unsuccessful = 0
+      mc.runonce_synchronous.each do |resp|
+        if resp[:data][:output] == true
+          successful += 1
+        else
+          unsuccessful += 1
+        end
+      end
+      puts("Nodes that completed successfully:        #{successful}")
+      puts("Nodes that did not complete successfully: #{unsuccessful}")
 
     when "status"
       mc.send(configuration[:command]).each do |node|

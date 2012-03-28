@@ -51,6 +51,12 @@ action "runonce", :description => "Invoke a single puppet run" do
            :display_as => "Output"
 end
 
+action "runonce_synchronous", :description => "Invoke a single puppet run in the foreground" do
+    output :output,
+           :description => "Output from puppet agent",
+           :display_as => "Output"
+end
+
 action "status", :description => "Get puppet agent's status" do
     display :always
 

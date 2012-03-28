@@ -16,6 +16,8 @@ module MCollective
     #                        /var/lib/puppet/state/last_run_summary.yaml
     #    puppetd.pidfile   - Where to find puppet agent's pid file; defaults to
     #                        /var/run/puppet/agent.pid
+    #    puppetd.agentbin  - Standalone agent binary location; defaults to
+    #                        /usr/bin/puppet
     class Puppetd<RPC::Agent
       metadata    :name        => "Puppet Controller Agent",
                   :description => "Run puppet agent, get its status, and enable/disable it",
@@ -32,6 +34,7 @@ module MCollective
         @pidfile = @config.pluginconf["puppet.pidfile"] || "/var/run/puppet/agent.pid"
         @puppetd = @config.pluginconf["puppetd.puppetd"] || "/usr/sbin/puppetd"
         @last_summary = @config.pluginconf["puppet.summary"] || "/var/lib/puppet/state/last_run_summary.yaml"
+        @agentbin = @config.pluginconf["puppetd.agentbin"] || "/usr/bin/puppet"
       end
 
       action "last_run_summary" do
@@ -48,6 +51,10 @@ module MCollective
 
       action "runonce" do
         runonce
+      end
+
+      action "runonce_synchronous" do
+        runonce_synchronous
       end
 
       action "status" do
@@ -85,6 +92,16 @@ module MCollective
         return 'running'  if   locked && has_pid
         return 'idling'   if ! locked && has_pid
         return 'stopped'  if ! has_pid
+      end
+
+      def runonce_synchronous
+        cmd = [ @agentbin, "agent -tv" ].join( " " )
+
+          #result = system(cmd)
+          retval = system('/opt/puppet/bin/puppet agent -tv')
+          logger.error retval
+          reply[:output] = retval
+            #run("#{cmd}", :stdout => :out, :stderr => :err)
       end
 
       def runonce
